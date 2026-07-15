@@ -1,0 +1,39 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1200"
+  height="800"
+  viewBox="0 0 1200 800"
+>
+  <rect width="1200" height="800" fill="#e3f2fd" />
+
+  <circle cx="600" cy="300" r="100" fill="#90caf9" />
+
+  <rect
+    x="300"
+    y="470"
+    width="600"
+    height="55"
+    rx="12"
+    fill="#64b5f6"
+  />
+
+  <rect
+    x="410"
+    y="555"
+    width="380"
+    height="38"
+    rx="10"
+    fill="#bbdefb"
+  />
+
+  <text
+    x="600"
+    y="690"
+    text-anchor="middle"
+    font-family="Arial, sans-serif"
+    font-size="36"
+    fill="#1565c0"
+  >
+    Campaign Image
+  </text>
+</svg>
