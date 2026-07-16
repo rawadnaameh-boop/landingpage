@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import Link from "next/link";
 
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import {
   Alert,
   Box,
@@ -45,11 +46,6 @@ export default function CampaignDashboard() {
 
         setCampaigns(campaignList);
       } catch (requestError) {
-        /*
-         * Do not show an error when the request was
-         * intentionally cancelled because the user
-         * navigated away.
-         */
         if (
           requestError instanceof DOMException &&
           requestError.name === "AbortError"
@@ -71,11 +67,6 @@ export default function CampaignDashboard() {
     }
 
     void loadCampaigns();
-
-    /*
-     * Cancel the request if the user leaves the page
-     * before the request finishes.
-     */
     return () => {
       controller.abort();
     };
@@ -98,21 +89,59 @@ export default function CampaignDashboard() {
           },
         }}
       >
-        <Box sx={{ mb: 4 }}>
+        <Box
+          sx={{
+            mb: 4,
+            display: "flex",
+            flexDirection: {
+              xs: "row",
+              sm: "column",
+            },
+
+            alignItems: {
+              xs: "stretch",
+              sm: "center",
+            },
+
+            justifyContent: "space-between",
+            gap: 2,
+          }}
+        >
           <Typography
             variant="h3"
             component="h1"
             sx={{
               mb: 1,
-              fontWeight: 700,
+              fontWeight: 500,
             }}
           >
             Campaign Dashboard
           </Typography>
 
-          <Typography color="text.secondary">
+          <Typography color="text.secondary" sx={{ fontWeight: 450 }}>
             View and manage all your landing-page campaigns.
           </Typography>
+
+          <Button
+            component={Link}
+            href="/admin/campaign-editor"
+            variant="outlined"
+            size="large"
+            startIcon={<AddRoundedIcon />}
+            sx={{
+              flexShrink: 0,
+              bgcolor: "#eeeeee",
+              color: "#333333",
+              boxShadow: "none",
+
+              "&:hover": {
+                bgcolor: "#e0e0e0",
+                boxShadow: "none",
+              },
+            }}
+          >
+            Create New Campaign
+          </Button>
         </Box>
 
         {loading && (
@@ -187,14 +216,14 @@ export default function CampaignDashboard() {
               display: "grid",
 
               gridTemplateColumns: {
-                xs: "1fr",
-
-                sm: "repeat(2, minmax(0, 1fr))",
-
-                lg: "repeat(3, minmax(0, 1fr))",
+                xs: "minmax(0, 300px)",
+                sm: "repeat(2, 300px)",
+                md: "repeat(3, 300px)",
               },
 
+              justifyContent: "center",
               gap: 3,
+              alignItems: "start",
             }}
           >
             {campaigns.map((campaign) => (

@@ -28,42 +28,47 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
 
   return (
     <Card
-      elevation={3}
+      elevation={2}
       sx={{
         height: "100%",
         display: "flex",
         flexDirection: "column",
         borderRadius: 2,
         overflow: "hidden",
-
+        maxWidth: 360,
+        mx: "auto",
         transition: "transform 180ms ease, box-shadow 180ms ease",
 
         "&:hover": {
-          transform: "translateY(-4px)",
-          boxShadow: 8,
+          transform: "translateY(-3px)",
+          boxShadow: 6,
         },
       }}
     >
       <CardMedia
         component="img"
-        height="210"
+        height="160"
         image={campaign.mainImageUrl}
         alt={`${campaign.campaignName} hero image`}
         onError={(event) => {
           event.currentTarget.src = "/images/campaign-placeholder.svg";
         }}
         sx={{
+          width: "100%",
+          height: 160,
           objectFit: "cover",
           bgcolor: "grey.100",
         }}
       />
 
-      <CardContent sx={{ flexGrow: 1 }}>
+      <CardContent sx={{ p: 2, flexGrow: 1 }}>
         <Typography
           variant="h6"
           component="h2"
           gutterBottom
           sx={{
+            mb: 1,
+            fontSize: "1.05rem",
             fontWeight: 700,
             overflowWrap: "anywhere",
           }}
@@ -73,9 +78,8 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
 
         <Stack
           direction="row"
-          spacing={1}
-          sx={{  alignItems: "center",
-            color: "text.secondary", }}
+          spacing={0.75}
+          sx={{ alignItems: "center", color: "text.secondary" }}
         >
           <LinkRoundedIcon fontSize="small" />
 
@@ -103,6 +107,15 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
           href={editUrl}
           variant="outlined"
           startIcon={<EditRoundedIcon />}
+          sx={{
+            color: "#333333",
+            borderColor: "#d0d0d0",
+
+            "&:hover": {
+              bgcolor: "#e0e0e0",
+              borderColor: "#bdbdbd",
+            },
+          }}
         >
           Edit
         </Button>
@@ -114,6 +127,16 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
           rel="noopener noreferrer"
           variant="contained"
           endIcon={<LaunchRoundedIcon />}
+          sx={{
+            bgcolor: "#eeeeeeec",
+            color: "#333333",
+            borderColor: "#d0d0d0",
+
+            "&:hover": {
+              bgcolor: "#e0e0e0",
+              borderColor: "#bdbdbd",
+            },
+          }}
         >
           View Live
         </Button>

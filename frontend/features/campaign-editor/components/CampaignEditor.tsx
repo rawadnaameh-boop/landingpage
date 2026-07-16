@@ -1,26 +1,148 @@
 "use client";
 
-import { useState } from "react";
-import { Box } from "@mui/material";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { createCampaign } from "../api/campaignApi";
+import { Box, CircularProgress, Stack, Typography } from "@mui/material";
+
+import {
+  createCampaign,
+  getCampaignBySlug,
+  updateCampaign,
+} from "../api/campaignApi";
+
 import { DEFAULT_CAMPAIGN } from "../constants/defaultCampaign";
-import type {
-  CampaignFormData,
-  SaveStatus,
-} from "../types/campaign";
+
+import type { CampaignFormData, SaveStatus } from "../types/campaign";
 
 import CampaignForm from "./CampaignForm";
 import LivePreview from "./LivePreview";
 
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
-export default function CampaignEditor() {
-  const [campaign, setCampaign] =
-    useState<CampaignFormData>(DEFAULT_CAMPAIGN);
+interface CampaignEditorProps {
+  initialSlug?: string | null;
+}
+
+
+interface StoredPageConfig {
+  headlineText?: string;
+  subheadlineText?: string;
+  mainImageUrl?: string;
+  primaryColor?: string;
+  buttonText?: string;
+}
+
+/**
+ * Safely converts the backend PageConfig JSON string
+ * into an object that the editor can use.
+ */
+function parsePageConfig(pageConfig: string): StoredPageConfig {
+  if (!pageConfig.trim()) {
+    return {};
+  }
+
+  try {
+    const parsedValue: unknown = JSON.parse(pageConfig);
+
+    if (
+      typeof parsedValue !== "object" ||
+      parsedValue === null ||
+      Array.isArray(parsedValue)
+    ) {
+      return {};
+    }
+
+    return parsedValue as StoredPageConfig;
+  } catch {
+    return {};
+  }
+}
+
+export default function CampaignEditor({
+  initialSlug = null,
+}: CampaignEditorProps) {
+  const router = useRouter();
+
+  const [campaign, setCampaign] = useState<CampaignFormData>({
+    ...DEFAULT_CAMPAIGN,
+  });
+
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const [loadingCampaign, setLoadingCampaign] = useState(Boolean(initialSlug));
 
   const [saving, setSaving] = useState(false);
+
   const [status, setStatus] = useState<SaveStatus>(null);
+
+ 
+  useEffect(() => {
+    const slugToLoad = initialSlug?.trim();
+    if (!slugToLoad) {
+      setEditingId(null);
+      setLoadingCampaign(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadExistingCampaign() {
+      try {
+        setLoadingCampaign(true);
+        setStatus(null);
+
+        const page = await getCampaignBySlug(slugToLoad!);
+
+        if (cancelled) {
+          return;
+        }
+
+        const config = parsePageConfig(page.pageConfig);
+        setEditingId(page.id);
+
+        setCampaign({
+          campaignName: page.campaignName,
+          slug: page.slug,
+
+          headlineText: config.headlineText ?? "",
+
+          subheadlineText: config.subheadlineText ?? "",
+
+          mainImageUrl: config.mainImageUrl ?? "",
+
+          primaryColor: config.primaryColor ?? "#d32f2f",
+
+          buttonText: config.buttonText ?? "SUBSCRIBE & PLAY",
+        });
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        setEditingId(null);
+
+        setStatus({
+          severity: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "The campaign could not be loaded.",
+        });
+      } finally {
+        if (!cancelled) {
+          setLoadingCampaign(false);
+        }
+      }
+    }
+
+    void loadExistingCampaign();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialSlug]);
 
   const updateCampaignField = (
     field: keyof CampaignFormData,
@@ -58,42 +180,68 @@ export default function CampaignEditor() {
     return null;
   };
 
-  const handleSave = async () => {
-    const validationError = validateCampaign();
+const handleSave = async () => {
+  const validationError = validateCampaign();
 
-    if (validationError) {
-      setStatus({
-        severity: "error",
-        message: validationError,
-      });
+  if (validationError) {
+    setStatus({
+      severity: "error",
+      message: validationError,
+    });
 
-      return;
+    return;
+  }
+
+  try {
+    setSaving(true);
+    setStatus(null);
+
+    if (editingId) {
+      // Update an existing campaign.
+      await updateCampaign(editingId, campaign);
+    } else {
+      // Create a new campaign.
+      await createCampaign(campaign);
     }
 
-    try {
-      setSaving(true);
-      setStatus(null);
-
-      await createCampaign(campaign);
-
-      setStatus({
-        severity: "success",
-        message: "Campaign saved successfully.",
-      });
-    } catch (error) {
-      const message =
+    /*
+     * After the API request succeeds,
+     * navigate back to the dashboard.
+     */
+    router.push("/dashboard");
+  } catch (error) {
+    setStatus({
+      severity: "error",
+      message:
         error instanceof Error
           ? error.message
-          : "The campaign could not be saved.";
+          : "The campaign could not be saved.",
+    });
+  } finally {
+    setSaving(false);
+  }
+};
 
-      setStatus({
-        severity: "error",
-        message,
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+  if (loadingCampaign) {
+    return (
+      <Box
+        component="main"
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          bgcolor: "#f5f5f5",
+        }}
+      >
+        <Stack spacing={2} sx={{ alignItems: "center" }}>
+          <CircularProgress />
+
+          <Typography color="text.secondary">Loading campaign...</Typography>
+        </Stack>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -101,7 +249,6 @@ export default function CampaignEditor() {
       sx={{
         display: "grid",
 
-        // Equal-width split screen on desktop.
         gridTemplateColumns: {
           xs: "1fr",
           md: "1fr 1fr",
