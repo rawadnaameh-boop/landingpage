@@ -22,7 +22,7 @@ export async function createCampaign(
 
   const payload: CreateCampaignPayload = {
     campaignName: campaign.campaignName.trim(),
-    slug: uniqueSlug, // Send the guaranteed unique slug to .NET
+    slug: campaign.slug.trim(),
 
     pageConfig: JSON.stringify({
       headlineText: campaign.headlineText.trim(),
@@ -45,7 +45,8 @@ export async function createCampaign(
   );
 
   const responseText = await response.text();
-  let responseData: any = null;
+
+  let responseData: unknown = null;
 
   if (responseText) {
     try {
@@ -56,18 +57,19 @@ export async function createCampaign(
   }
 
   if (!response.ok) {
-    let errorMessage = `The API returned status ${response.status}.`;
+    let errorMessage =
+      `The API returned status ${response.status}.`;
 
-    if (responseData) {
-      if (typeof responseData === "object" && responseData.message) {
-        errorMessage = responseData.message;
-      } 
-      else if (typeof responseData === "object" && responseData.errors) {
-        errorMessage = Object.values(responseData.errors).flat().join(" ");
-      } 
-      else if (typeof responseData === "string") {
-        errorMessage = responseData;
-      }
+  
+    if (
+      typeof responseData === "object" &&
+      responseData !== null &&
+      "message" in responseData &&
+      typeof responseData.message === "string"
+    ) {
+      errorMessage = responseData.message;
+    } else if (typeof responseData === "string") {
+      errorMessage = responseData;
     }
 
     throw new Error(errorMessage);

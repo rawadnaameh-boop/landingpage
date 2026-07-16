@@ -12,7 +12,8 @@ import {
 } from "@mui/material";
 
 import type { CampaignFormData, SaveStatus } from "../types/campaign";
-
+import Link from "next/link";
+import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 interface CampaignFormProps {
   campaign: CampaignFormData;
   saving: boolean;
@@ -58,7 +59,22 @@ export default function CampaignForm({
         },
       }}
     >
-      <Box sx={{ mb: 3 }}>
+      <Box
+        sx={{
+          mb: 3,
+          display: "flex",
+          flexDirection: {
+            xs: "column",
+            sm: "row",
+          },
+          alignItems: {
+            xs: "stretch",
+            sm: "flex-start",
+          },
+          justifyContent: "space-between",
+          gap: 2,
+        }}
+      >
         <Typography variant="h4" component="h1" gutterBottom>
           Campaign Settings
         </Typography>
@@ -66,6 +82,24 @@ export default function CampaignForm({
         <Typography variant="body2" color="text.secondary">
           Edit the campaign information and view your changes instantly.
         </Typography>
+        <Button
+          component={Link}
+          href="/dashboard"
+          variant="outlined"
+          startIcon={<DashboardRoundedIcon />}
+          sx={{
+            flexShrink: 0,
+            color: "#333333",
+            boxShadow: "none",
+
+            "&:hover": {
+              bgcolor: "#e0e0e0",
+              boxShadow: "none",
+            },
+          }}
+        >
+          View Dashboard
+        </Button>
       </Box>
 
       <Divider sx={{ mb: 3 }} />
@@ -192,6 +226,14 @@ export default function CampaignForm({
         sx={{
           py: 1.5,
           fontSize: "1rem",
+          bgcolor: "#eeeeee",
+          color: "#333333",
+          boxShadow: "none",
+
+          "&:hover": {
+            bgcolor: "#e0e0e0",
+            boxShadow: "none",
+          },
         }}
       >
         {saving ? "Saving..." : "Save Campaign"}
