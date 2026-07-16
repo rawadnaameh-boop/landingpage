@@ -13,20 +13,16 @@ interface CreateCampaignPayload {
 export async function createCampaign(
   campaign: CampaignFormData,
 ): Promise<unknown> {
-  /*
-   * This payload assumes Rawad's API expects:
-   *
-   * {
-   *   campaignName: string,
-   *   slug: string,
-   *   pageConfig: JSON string
-   * }
-   *
-   * Check DTO in the backend and Change this file accordingly.
-   */
+  // --- THE CODE FIX: AUTOMATIC UNIQUE SLUG ---
+  // This appends a random 4-digit number to the slug (e.g. "summer-launch-2026-8294")
+  // so your database will never block you with a duplicate error!
+  const uniqueRandomNumber = Math.floor(1000 + Math.random() * 9000);
+  const uniqueSlug = `${campaign.slug.trim()}-${uniqueRandomNumber}`;
+  // --------------------------------------------
+
   const payload: CreateCampaignPayload = {
     campaignName: campaign.campaignName.trim(),
-    slug: campaign.slug.trim(),
+    slug: uniqueSlug, // Send the guaranteed unique slug to .NET
 
     pageConfig: JSON.stringify({
       headlineText: campaign.headlineText.trim(),
@@ -41,18 +37,15 @@ export async function createCampaign(
     `${API_BASE_URL}/api/pages`,
     {
       method: "POST",
-
       headers: {
         "Content-Type": "application/json",
       },
-
       body: JSON.stringify(payload),
     },
   );
 
   const responseText = await response.text();
-
-  let responseData: unknown = null;
+  let responseData: any = null;
 
   if (responseText) {
     try {
@@ -63,10 +56,19 @@ export async function createCampaign(
   }
 
   if (!response.ok) {
-    const errorMessage =
-      typeof responseData === "string"
-        ? responseData
-        : `The API returned status ${response.status}.`;
+    let errorMessage = `The API returned status ${response.status}.`;
+
+    if (responseData) {
+      if (typeof responseData === "object" && responseData.message) {
+        errorMessage = responseData.message;
+      } 
+      else if (typeof responseData === "object" && responseData.errors) {
+        errorMessage = Object.values(responseData.errors).flat().join(" ");
+      } 
+      else if (typeof responseData === "string") {
+        errorMessage = responseData;
+      }
+    }
 
     throw new Error(errorMessage);
   }

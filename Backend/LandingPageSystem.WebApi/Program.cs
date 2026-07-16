@@ -34,10 +34,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         b => b.MigrationsAssembly("LandingPageSystem.Infrastructure")
     ));
 
-// 3. Register Onion Architecture Layers for Dependency Injection
+// 3. Register Onion Architecture Layers and External Services for Dependency Injection
 // This maps our Domain contracts to our Application/Infrastructure services
 builder.Services.AddScoped<ILandingPageRepository, MySqlLandingPageRepository>();
 builder.Services.AddScoped<ILandingPageService, LandingPageService>();
+
+// Register IHttpClientFactory to allow our LandingPageService to make calls to the Python ML microservice
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
@@ -54,9 +57,6 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseCors(FrontendCorsPolicy);
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

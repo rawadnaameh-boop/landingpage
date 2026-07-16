@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Box } from "@mui/material";
 
 import { createCampaign } from "../api/campaignApi";
@@ -21,6 +21,43 @@ export default function CampaignEditor() {
 
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<SaveStatus>(null);
+
+  // --- AUTOMATIC COLOR EXTRACTION (ML LOOP) ---
+  useEffect(() => {
+    const imageUrl = campaign.mainImageUrl; 
+
+    // If there is no image URL, or it doesn't start with "http", do nothing.
+    if (!imageUrl || !imageUrl.startsWith("http")) return;
+
+    // Wait 800ms after the user stops typing before calling the backend
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/pages/extract-colors", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ url: imageUrl }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Update the campaign's primaryColor with the color from the ML service
+          setCampaign((currentCampaign) => ({
+            ...currentCampaign,
+            primaryColor: data.primary,
+          }));
+        }
+      } catch (error) {
+        console.error("Error extracting colors from backend:", error);
+      }
+    }, 300); 
+
+    // If the user types another character before 800ms is up, cancel the previous timer
+    return () => clearTimeout(delayDebounceFn);
+  }, [campaign.mainImageUrl]);
+  // ---------------------------------------------
 
   const updateCampaignField = (
     field: keyof CampaignFormData,

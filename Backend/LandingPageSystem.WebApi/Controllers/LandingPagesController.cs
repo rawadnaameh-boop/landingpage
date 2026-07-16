@@ -89,4 +89,27 @@ public class LandingPagesController : ControllerBase
         var pages = await _service.GetAllAsync();
         return Ok(pages);
     }
+
+    // 5. POST: api/pages/extract-colors
+    [HttpPost("extract-colors")]
+    public async Task<IActionResult> ExtractColors([FromBody] ColorExtractionRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Url))
+        {
+            return BadRequest(new { message = "Image URL cannot be empty." });
+        }
+
+        // Forward the request to ILandingPageService, which triggers the Python ML Service
+        var result = await _service.ExtractColorsAsync(request.Url);
+
+        if (result == null)
+        {
+            return StatusCode(500, new
+            {
+                message = "Failed to extract colors from the image. Ensure the Python ML service is active and the URL is correct."
+            });
+        }
+
+        return Ok(result);
+    }
 }
