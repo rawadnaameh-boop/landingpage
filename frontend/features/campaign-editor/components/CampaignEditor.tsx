@@ -86,7 +86,7 @@ export default function CampaignEditor({
     const delayDebounceFn = setTimeout(async () => {
       try {
         const response = await fetch(
-          "http://localhost:5000/api/pages/extract-colors",
+          "http://localhost:5101/api/pages/extract-colors",
           {
             method: "POST",
             headers: {
