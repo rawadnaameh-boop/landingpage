@@ -6,6 +6,7 @@ using LandingPageSystem.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+const string FrontendCorsPolicy = "FrontendCors";
 
 // 1. Add services to the container.
 builder.Services.AddControllers();
@@ -13,6 +14,16 @@ builder.Services.AddControllers();
 // Configure Swagger/OpenAPI for testing endpoints
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(FrontendCorsPolicy, policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:3001")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 // 2. Configure EF Core with MySQL (Pomelo)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -37,7 +48,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+app.UseCors(FrontendCorsPolicy);
 
 app.UseAuthorization();
 
