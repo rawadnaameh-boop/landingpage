@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="LandingPageSystem.Application/LandingPageSystem.Application.csproj" />
+  <Project Path="LandingPageSystem.Domain/LandingPageSystem.Domain.csproj" />
+  <Project Path="LandingPageSystem.Infrastructure/LandingPageSystem.Infrastructure.csproj" />
+  <Project Path="LandingPageSystem.WebApi/LandingPageSystem.WebApi.csproj" />
+</Solution>

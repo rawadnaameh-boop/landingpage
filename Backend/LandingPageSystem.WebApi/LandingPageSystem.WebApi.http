@@ -1,0 +1,6 @@
+@LandingPageSystem.WebApi_HostAddress = http://localhost:5101
+
+GET {{LandingPageSystem.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
