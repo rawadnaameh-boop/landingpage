@@ -4,26 +4,26 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ??
   "http://localhost:5000";
 
-interface CreateCampaignPayload {
+export interface CampaignApiResponse {
+  id: number;
   campaignName: string;
   slug: string;
   pageConfig: string;
 }
 
-export async function createCampaign(
+interface CampaignPayload {
+  campaignName: string;
+  slug: string;
+  pageConfig: string;
+}
+
+function createPayload(
   campaign: CampaignFormData,
-): Promise<unknown> {
-  // --- THE CODE FIX: AUTOMATIC UNIQUE SLUG ---
-  // This appends a random 4-digit number to the slug (e.g. "summer-launch-2026-8294")
-  // so your database will never block you with a duplicate error!
-  const uniqueRandomNumber = Math.floor(1000 + Math.random() * 9000);
-  const uniqueSlug = `${campaign.slug.trim()}-${uniqueRandomNumber}`;
-  // --------------------------------------------
-
-  const payload: CreateCampaignPayload = {
+  slug: string,
+): CampaignPayload {
+  return {
     campaignName: campaign.campaignName.trim(),
-    slug: campaign.slug.trim(),
-
+    slug,
     pageConfig: JSON.stringify({
       headlineText: campaign.headlineText.trim(),
       subheadlineText: campaign.subheadlineText.trim(),
@@ -32,18 +32,11 @@ export async function createCampaign(
       buttonText: campaign.buttonText.trim(),
     }),
   };
+}
 
-  const response = await fetch(
-    `${API_BASE_URL}/api/pages`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    },
-  );
-
+async function readResponse(
+  response: Response,
+): Promise<unknown> {
   const responseText = await response.text();
 
   let responseData: unknown = null;
@@ -60,7 +53,6 @@ export async function createCampaign(
     let errorMessage =
       `The API returned status ${response.status}.`;
 
-  
     if (
       typeof responseData === "object" &&
       responseData !== null &&
@@ -76,4 +68,78 @@ export async function createCampaign(
   }
 
   return responseData;
+}
+
+// POST /api/pages
+export async function createCampaign(
+  campaign: CampaignFormData,
+): Promise<CampaignApiResponse> {
+  const uniqueRandomNumber =
+    Math.floor(1000 + Math.random() * 9000);
+
+  const uniqueSlug =
+    `${campaign.slug.trim()}-${uniqueRandomNumber}`;
+
+  const payload = createPayload(
+    campaign,
+    uniqueSlug,
+  );
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/pages`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  return await readResponse(
+    response,
+  ) as CampaignApiResponse;
+}
+
+// GET /api/pages/slug/{slug}
+export async function getCampaignBySlug(
+  slug: string,
+): Promise<CampaignApiResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/pages/slug/${encodeURIComponent(slug)}`,
+    {
+      method: "GET",
+      cache: "no-store",
+    },
+  );
+
+  return await readResponse(
+    response,
+  ) as CampaignApiResponse;
+}
+
+// PUT /api/pages/{id}
+export async function updateCampaign(
+  id: number,
+  campaign: CampaignFormData,
+): Promise<CampaignApiResponse> {
+  const payload = createPayload(
+    campaign,
+    campaign.slug.trim(),
+  );
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/pages/${id}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  return await readResponse(
+    response,
+  ) as CampaignApiResponse;
 }

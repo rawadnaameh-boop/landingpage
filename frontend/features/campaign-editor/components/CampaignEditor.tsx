@@ -24,7 +24,6 @@ interface CampaignEditorProps {
   initialSlug?: string | null;
 }
 
-
 interface StoredPageConfig {
   headlineText?: string;
   subheadlineText?: string;
@@ -68,8 +67,7 @@ export default function CampaignEditor({
     ...DEFAULT_CAMPAIGN,
   });
 
-
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const [loadingCampaign, setLoadingCampaign] = useState(Boolean(initialSlug));
 
@@ -77,10 +75,9 @@ export default function CampaignEditor({
 
   const [status, setStatus] = useState<SaveStatus>(null);
 
-  
   // --- AUTOMATIC COLOR EXTRACTION (ML LOOP) ---
   useEffect(() => {
-    const imageUrl = campaign.mainImageUrl; 
+    const imageUrl = campaign.mainImageUrl;
 
     // If there is no image URL, or it doesn't start with "http", do nothing.
     if (!imageUrl || !imageUrl.startsWith("http")) return;
@@ -88,17 +85,20 @@ export default function CampaignEditor({
     // Wait 800ms after the user stops typing before calling the backend
     const delayDebounceFn = setTimeout(async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/pages/extract-colors", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        const response = await fetch(
+          "http://localhost:5000/api/pages/extract-colors",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ url: imageUrl }),
           },
-          body: JSON.stringify({ url: imageUrl }),
-        });
+        );
 
         if (response.ok) {
           const data = await response.json();
-          
+
           // Update the campaign's primaryColor with the color from the ML service
           setCampaign((currentCampaign) => ({
             ...currentCampaign,
@@ -108,13 +108,13 @@ export default function CampaignEditor({
       } catch (error) {
         console.error("Error extracting colors from backend:", error);
       }
-    }, 300); 
+    }, 300);
 
     // If the user types another character before 800ms is up, cancel the previous timer
     return () => clearTimeout(delayDebounceFn);
   }, [campaign.mainImageUrl]);
   // ---------------------------------------------
- 
+
   useEffect(() => {
     const slugToLoad = initialSlug?.trim();
     if (!slugToLoad) {
@@ -217,47 +217,47 @@ export default function CampaignEditor({
     return null;
   };
 
-const handleSave = async () => {
-  const validationError = validateCampaign();
+  const handleSave = async () => {
+    const validationError = validateCampaign();
 
-  if (validationError) {
-    setStatus({
-      severity: "error",
-      message: validationError,
-    });
+    if (validationError) {
+      setStatus({
+        severity: "error",
+        message: validationError,
+      });
 
-    return;
-  }
-
-  try {
-    setSaving(true);
-    setStatus(null);
-
-    if (editingId) {
-      // Update an existing campaign.
-      await updateCampaign(editingId, campaign);
-    } else {
-      // Create a new campaign.
-      await createCampaign(campaign);
+      return;
     }
 
-    /*
-     * After the API request succeeds,
-     * navigate back to the dashboard.
-     */
-    router.push("/dashboard");
-  } catch (error) {
-    setStatus({
-      severity: "error",
-      message:
-        error instanceof Error
-          ? error.message
-          : "The campaign could not be saved.",
-    });
-  } finally {
-    setSaving(false);
-  }
-};
+    try {
+      setSaving(true);
+      setStatus(null);
+
+      if (editingId !== null) {
+        // Update an existing campaign.
+        await updateCampaign(editingId, campaign);
+      } else {
+        // Create a new campaign.
+        await createCampaign(campaign);
+      }
+
+      /*
+       * After the API request succeeds,
+       * navigate back to the dashboard.
+       */
+      router.push("/dashboard");
+    } catch (error) {
+      setStatus({
+        severity: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The campaign could not be saved.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loadingCampaign) {
     return (
