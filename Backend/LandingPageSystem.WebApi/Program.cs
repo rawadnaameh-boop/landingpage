@@ -4,7 +4,8 @@ using LandingPageSystem.Domain.Repositories;
 using LandingPageSystem.Infrastructure.Data;
 using LandingPageSystem.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
-
+using LandingPageSystem.Infrastructure.Services;
+using Microsoft.Extensions.Logging;
 var builder = WebApplication.CreateBuilder(args);
 const string FrontendCorsPolicy = "FrontendCors";
 
@@ -39,9 +40,24 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<ILandingPageRepository, MySqlLandingPageRepository>();
 builder.Services.AddScoped<ILandingPageService, LandingPageService>();
 
-// Register IHttpClientFactory to allow our LandingPageService to make calls to the Python ML microservice
-builder.Services.AddHttpClient();
+//// Register IHttpClientFactory to allow our LandingPageService to make calls to the Python ML microservice
+//builder.Services.AddHttpClient();
+// Configure the typed HTTP client used to call the Python AI service.
+var pythonServiceBaseUrl =
+    builder.Configuration["PythonService:BaseUrl"]
+    ?? "http://localhost:8000/";
 
+builder.Services.AddHttpClient<
+    ICopyGenerationService,
+    PythonCopyGenerationService
+>(client =>
+{
+    client.BaseAddress =
+        new Uri(pythonServiceBaseUrl);
+
+    client.Timeout =
+        TimeSpan.FromSeconds(30);
+});
 var app = builder.Build();
 
 // 4. Configure the HTTP request pipeline.

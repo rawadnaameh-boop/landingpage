@@ -10,7 +10,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import type { CampaignFormData, SaveStatus } from "../types/campaign";
 import Link from "next/link";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
@@ -18,7 +18,15 @@ interface CampaignFormProps {
   campaign: CampaignFormData;
   saving: boolean;
   status: SaveStatus;
+
+  topic: string;
+  generatingCopy: boolean;
+
+  onTopicChange: (value: string) => void;
+  onGenerateCopy: () => Promise<void>;
+
   onChange: (field: keyof CampaignFormData, value: string) => void;
+
   onSave: () => Promise<void>;
 }
 
@@ -28,6 +36,10 @@ export default function CampaignForm({
   campaign,
   saving,
   status,
+  topic,
+  generatingCopy,
+  onTopicChange,
+  onGenerateCopy,
   onChange,
   onSave,
 }: CampaignFormProps) {
@@ -105,6 +117,108 @@ export default function CampaignForm({
       <Divider sx={{ mb: 3 }} />
 
       <Stack spacing={2.5}>
+        <Box
+          sx={{
+            p: 2,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
+            bgcolor: "grey.50",
+          }}
+        >
+          <Typography
+            variant="subtitle2"
+            sx={{
+              mb: 1.5,
+              fontWeight: 700,
+            }}
+          >
+            AI Copy Generator
+          </Typography>
+
+          <Stack
+            spacing={1.5}
+            sx={{
+              flexDirection: {
+                xs: "column",
+                sm: "row",
+              },
+              alignItems: {
+                xs: "stretch",
+                sm: "flex-start",
+              },
+            }}
+          >
+            <TextField
+              label="Topic"
+              value={topic}
+              onChange={(event) => onTopicChange(event.target.value)}
+              placeholder="Example: Fitness App"
+              helperText={`${topic.length}/100 characters`}
+              disabled={generatingCopy}
+              slotProps={{
+                htmlInput: {
+                  maxLength: 100,
+                },
+              }}
+            />
+            <Button
+              type="button"
+              variant="outlined"
+              disabled={generatingCopy || !topic.trim()}
+              startIcon={
+                generatingCopy ? (
+                  <CircularProgress size={17} color="inherit" />
+                ) : (
+                  <AutoAwesomeRoundedIcon fontSize="small" />
+                )
+              }
+              onClick={() => {
+                void onGenerateCopy();
+              }}
+              sx={{
+                minWidth: 180,
+                height: 48,
+                px: 2.25,
+
+                borderRadius: 2,
+                borderColor: "#b8cdf5",
+
+                bgcolor: "#eef4ff",
+                color: "#1a5fb4",
+
+                fontSize: "0.875rem",
+                fontWeight: 700,
+                textTransform: "none",
+                whiteSpace: "nowrap",
+
+                boxShadow: "none",
+
+                transition:
+                  "background-color 160ms ease, border-color 160ms ease, transform 160ms ease",
+
+                "&:hover": {
+                  bgcolor: "#e2ecff",
+                  borderColor: "#8eb0ef",
+                  boxShadow: "none",
+                  transform: "translateY(-1px)",
+                },
+
+                "&:active": {
+                  transform: "translateY(0)",
+                },
+
+                "&.Mui-disabled": {
+                  bgcolor: "#f4f5f7",
+                  borderColor: "#dedede",
+                  color: "#9a9a9a",
+                },
+              }}
+            >
+              {generatingCopy ? "Generating..." : "Generate with AI"}
+            </Button>
+          </Stack>
+        </Box>
         <TextField
           label="Campaign Name"
           value={campaign.campaignName}

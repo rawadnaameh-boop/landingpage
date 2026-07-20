@@ -10,7 +10,7 @@ import {
   getCampaignBySlug,
   updateCampaign,
 } from "../api/campaignApi";
-
+import { generateCampaignCopy } from "../api/copyGenerationApi";
 import { DEFAULT_CAMPAIGN } from "../constants/defaultCampaign";
 
 import type { CampaignFormData, SaveStatus } from "../types/campaign";
@@ -74,7 +74,9 @@ export default function CampaignEditor({
   const [saving, setSaving] = useState(false);
 
   const [status, setStatus] = useState<SaveStatus>(null);
+  const [topic, setTopic] = useState("");
 
+  const [generatingCopy, setGeneratingCopy] = useState(false);
   // --- AUTOMATIC COLOR EXTRACTION (ML LOOP) ---
   useEffect(() => {
     const imageUrl = campaign.mainImageUrl;
@@ -216,7 +218,60 @@ export default function CampaignEditor({
 
     return null;
   };
+  const handleGenerateCopy = async () => {
+    const normalizedTopic = topic.trim();
 
+    if (!normalizedTopic) {
+      setStatus({
+        severity: "error",
+        message: "Enter a topic before generating copy.",
+      });
+
+      return;
+    }
+
+    if (normalizedTopic.length > 100) {
+      setStatus({
+        severity: "error",
+        message: "Topic cannot exceed 100 characters.",
+      });
+
+      return;
+    }
+
+    try {
+      setGeneratingCopy(true);
+      setStatus(null);
+
+      const generatedCopy = await generateCampaignCopy(normalizedTopic);
+
+      /*
+       * Replace the existing headline and subheadline.
+       * The form and preview both use this same campaign state.
+       */
+      setCampaign((currentCampaign) => ({
+        ...currentCampaign,
+        headlineText: generatedCopy.headline,
+        subheadlineText: generatedCopy.subheadline,
+      }));
+
+      setStatus({
+        severity: "success",
+        message:
+          "AI copy generated successfully. You can edit it before saving.",
+      });
+    } catch (error) {
+      setStatus({
+        severity: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The copy could not be generated.",
+      });
+    } finally {
+      setGeneratingCopy(false);
+    }
+  };
   const handleSave = async () => {
     const validationError = validateCampaign();
 
@@ -294,14 +349,27 @@ export default function CampaignEditor({
         minHeight: "100vh",
       }}
     >
-      <CampaignForm
+      {/* <CampaignForm
         campaign={campaign}
         saving={saving}
         status={status}
         onChange={updateCampaignField}
         onSave={handleSave}
+      /> */}
+      <CampaignForm
+        campaign={campaign}
+        saving={saving}
+        status={status}
+        topic={topic}
+        generatingCopy={generatingCopy}
+        onTopicChange={(value) => {
+          setTopic(value);
+          setStatus(null);
+        }}
+        onGenerateCopy={handleGenerateCopy}
+        onChange={updateCampaignField}
+        onSave={handleSave}
       />
-
       <LivePreview campaign={campaign} />
     </Box>
   );

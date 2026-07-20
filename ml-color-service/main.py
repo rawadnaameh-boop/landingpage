@@ -1,13 +1,16 @@
 import io
+import os
 import requests
 import numpy as np
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from groq import Groq
+from pydantic import BaseModel, Field
 from PIL import Image
 from sklearn.cluster import KMeans
-
-app = FastAPI(title="ML Color Extraction Service")
+from routes.copy_routes import router as copy_router
+app = FastAPI(title="ML Color Extraction Service and Copy Generation")
 
 # Allow CORS so your other services can talk to this one without security blocks
 app.add_middleware(
@@ -17,7 +20,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+app.include_router(copy_router)
 # Define the expected JSON input structure
 class ImageRequest(BaseModel):
     url: str
@@ -73,7 +76,6 @@ async def extract_colors(request: ImageRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
 
-# If you run this file directly, start the Uvicorn server on port 8000
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
