@@ -1,5 +1,6 @@
 import io
 import os
+import logging
 import requests
 import numpy as np
 from dotenv import load_dotenv
@@ -9,7 +10,12 @@ from groq import Groq
 from pydantic import BaseModel, Field
 from PIL import Image
 from sklearn.cluster import KMeans
+from transformers import pipeline
 from routes.copy_routes import router as copy_router
+from routes.urgency_routes import router as urgency_router
+logger = logging.getLogger(__name__)
+
+
 app = FastAPI(title="ML Color Extraction Service and Copy Generation")
 
 # Allow CORS so your other services can talk to this one without security blocks
@@ -21,6 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(copy_router)
+app.include_router(urgency_router)
 # Define the expected JSON input structure
 class ImageRequest(BaseModel):
     url: str

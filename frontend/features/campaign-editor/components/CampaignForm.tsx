@@ -11,6 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import UrgencyMeter from "./UrgencyMeter";
 import type { CampaignFormData, SaveStatus } from "../types/campaign";
 import Link from "next/link";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
@@ -218,6 +219,7 @@ export default function CampaignForm({
               {generatingCopy ? "Generating..." : "Generate with AI"}
             </Button>
           </Stack>
+          <UrgencyMeter headline={campaign.headlineText} />
         </Box>
         <TextField
           label="Campaign Name"

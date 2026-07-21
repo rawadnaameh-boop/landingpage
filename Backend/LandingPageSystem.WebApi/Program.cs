@@ -3,76 +3,105 @@ using LandingPageSystem.Application.Services;
 using LandingPageSystem.Domain.Repositories;
 using LandingPageSystem.Infrastructure.Data;
 using LandingPageSystem.Infrastructure.Repositories;
-using Microsoft.EntityFrameworkCore;
 using LandingPageSystem.Infrastructure.Services;
-using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+
 const string FrontendCorsPolicy = "FrontendCors";
 
-// 1. Add services to the container.
+// 1. Add framework services
 builder.Services.AddControllers();
-
-// Configure Swagger/OpenAPI for testing endpoints
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAuthorization();
 
+// 2. Configure CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(FrontendCorsPolicy, policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:3001")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        policy
+            .WithOrigins(
+                "http://localhost:3000",
+                "http://localhost:3001"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
-// 2. Configure EF Core with MySQL (Pomelo)
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// 3. Configure EF Core with MySQL
+string connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException(
+        "The DefaultConnection connection string is missing."
+    );
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(
         connectionString,
         ServerVersion.AutoDetect(connectionString),
-        b => b.MigrationsAssembly("LandingPageSystem.Infrastructure")
-    ));
+        mysqlOptions =>
+            mysqlOptions.MigrationsAssembly(
+                "LandingPageSystem.Infrastructure"
+            )
+    )
+);
 
-// 3. Register Onion Architecture Layers and External Services for Dependency Injection
-// This maps our Domain contracts to our Application/Infrastructure services
-builder.Services.AddScoped<ILandingPageRepository, MySqlLandingPageRepository>();
-builder.Services.AddScoped<ILandingPageService, LandingPageService>();
+// 4. Register application and infrastructure services
+builder.Services.AddScoped<
+    ILandingPageRepository,
+    MySqlLandingPageRepository
+>();
 
-//// Register IHttpClientFactory to allow our LandingPageService to make calls to the Python ML microservice
-//builder.Services.AddHttpClient();
-// Configure the typed HTTP client used to call the Python AI service.
-var pythonServiceBaseUrl =
+builder.Services.AddScoped<
+    ILandingPageService,
+    LandingPageService
+>();
+
+// 5. Read the Python service URL once
+string pythonServiceBaseUrl =
     builder.Configuration["PythonService:BaseUrl"]
     ?? "http://localhost:8000/";
 
+// Existing AI copy-generation client
 builder.Services.AddHttpClient<
     ICopyGenerationService,
     PythonCopyGenerationService
 >(client =>
 {
-    client.BaseAddress =
-        new Uri(pythonServiceBaseUrl);
-
-    client.Timeout =
-        TimeSpan.FromSeconds(30);
+    client.BaseAddress = new Uri(pythonServiceBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
 });
+
+// New urgency-scoring client
+builder.Services.AddHttpClient<
+    IUrgencyScoringService,
+    UrgencyScoringService
+>(client =>
+{
+    client.BaseAddress = new Uri(pythonServiceBaseUrl);
+    client.Timeout = TimeSpan.FromMinutes(2);
+});
+
 var app = builder.Build();
 
-// 4. Configure the HTTP request pipeline.
+// 6. Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-if (!app.Environment.IsDevelopment())
+else
 {
     app.UseHttpsRedirection();
 }
 
 app.UseCors(FrontendCorsPolicy);
+
 app.UseAuthorization();
+
 app.MapControllers();
+
 app.Run();
