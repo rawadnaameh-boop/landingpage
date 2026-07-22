@@ -13,7 +13,7 @@ import {
 } from "@dnd-kit/core";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-
+import { generatePageLayout } from "../api/pageLayoutApi";
 import {
   Alert,
   AppBar,
@@ -71,6 +71,8 @@ export default function CampaignEditor({
   const [status, setStatus] = useState<SaveStatus>(null);
   const [topic, setTopic] = useState("");
   const [generatingCopy, setGeneratingCopy] = useState(false);
+  const [pagePrompt, setPagePrompt] = useState("");
+  const [generatingPage, setGeneratingPage] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
 
@@ -260,7 +262,49 @@ export default function CampaignEditor({
       setGeneratingCopy(false);
     }
   };
+  const handleGeneratePage = async () => {
+    const normalizedPrompt = pagePrompt.trim();
 
+    if (!normalizedPrompt) {
+      setStatus({
+        severity: "error",
+        message: "Enter a page description before generating.",
+      });
+      return;
+    }
+
+    try {
+      setGeneratingPage(true);
+      setStatus(null);
+
+      const generatedBlocks = await generatePageLayout(normalizedPrompt);
+
+      // Replace the entire current canvas with the AI-generated blocks.
+      setCampaign((current) => ({
+        ...current,
+        blocks: generatedBlocks,
+      }));
+
+      // The previously selected block may no longer exist.
+      setSelectedBlockId(null);
+
+      setStatus({
+        severity: "success",
+        message:
+          "AI page generated successfully. You can edit, reorder, or remove the blocks.",
+      });
+    } catch (error) {
+      setStatus({
+        severity: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The AI page could not be generated.",
+      });
+    } finally {
+      setGeneratingPage(false);
+    }
+  };
   const validateCampaign = (): string | null => {
     if (!campaign.campaignName.trim()) return "Campaign name is required.";
     if (!campaign.slug.trim()) return "Slug is required.";
@@ -403,7 +447,62 @@ export default function CampaignEditor({
           </Alert>
         )}
       </AppBar>
+      <Box
+        component="form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleGeneratePage();
+        }}
+        sx={{
+          width: "min(900px, calc(100% - 32px))",
+          mx: "auto",
+          my: 2,
+          p: 1.5,
+          bgcolor: "background.paper",
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: 3,
+          boxShadow: 3,
+          position: "relative",
+          zIndex: 2,
+        }}
+      >
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1.5}
+          sx={{ alignItems: "stretch" }}
+        >
+          <TextField
+            fullWidth
+            size="small"
+            label="Describe the landing page"
+            placeholder="Create a VIP gaming subscription page"
+            value={pagePrompt}
+            disabled={generatingPage}
+            onChange={(event) => setPagePrompt(event.target.value)}
+            autoComplete="off"
+          />
 
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={generatingPage || !pagePrompt.trim()}
+            startIcon={
+              generatingPage ? (
+                <CircularProgress size={17} color="inherit" />
+              ) : (
+                <AutoAwesomeRoundedIcon />
+              )
+            }
+            sx={{
+              minWidth: { sm: 230 },
+              whiteSpace: "nowrap",
+            }}
+          >
+            {generatingPage ? "Generating Page..." : "Generate Page with AI"}
+          </Button>
+        </Stack>
+      </Box>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

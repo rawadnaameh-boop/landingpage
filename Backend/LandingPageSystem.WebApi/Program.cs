@@ -60,10 +60,17 @@ builder.Services.AddScoped<
     LandingPageService
 >();
 
-// 5. Read the Python service URL once
+// 5. Read and normalize the Python service URL
 string pythonServiceBaseUrl =
     builder.Configuration["PythonService:BaseUrl"]
     ?? "http://localhost:8000/";
+
+if (!pythonServiceBaseUrl.EndsWith('/'))
+{
+    pythonServiceBaseUrl += "/";
+}
+
+var pythonServiceUri = new Uri(pythonServiceBaseUrl);
 
 // Existing AI copy-generation client
 builder.Services.AddHttpClient<
@@ -71,18 +78,26 @@ builder.Services.AddHttpClient<
     PythonCopyGenerationService
 >(client =>
 {
-    client.BaseAddress = new Uri(pythonServiceBaseUrl);
+    client.BaseAddress = pythonServiceUri;
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-// New urgency-scoring client
+// Existing urgency-scoring client
 builder.Services.AddHttpClient<
     IUrgencyScoringService,
     UrgencyScoringService
 >(client =>
 {
-    client.BaseAddress = new Uri(pythonServiceBaseUrl);
+    client.BaseAddress = pythonServiceUri;
     client.Timeout = TimeSpan.FromMinutes(2);
+});
+
+// AI full-page generation client
+// The name must match CreateClient("MlService") in AiPageController.
+builder.Services.AddHttpClient("MlService", client =>
+{
+    client.BaseAddress = pythonServiceUri;
+    client.Timeout = TimeSpan.FromSeconds(60);
 });
 
 var app = builder.Build();
