@@ -1,5 +1,5 @@
 import type { CampaignFormData } from "../types/campaign";
-
+import type { CampaignBlock } from "../types/blocks"
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ??
   "http://localhost:5000";
@@ -17,21 +17,22 @@ interface CampaignPayload {
   pageConfig: string;
 }
 
-function createPayload(
-  campaign: CampaignFormData,
-  slug: string,
-): CampaignPayload {
+function createPayload(campaign: CampaignFormData, slug: string): CampaignPayload {
   return {
     campaignName: campaign.campaignName.trim(),
     slug,
-    pageConfig: JSON.stringify({
-      headlineText: campaign.headlineText.trim(),
-      subheadlineText: campaign.subheadlineText.trim(),
-      mainImageUrl: campaign.mainImageUrl.trim(),
-      primaryColor: campaign.primaryColor,
-      buttonText: campaign.buttonText.trim(),
-    }),
+    pageConfig: JSON.stringify(campaign.blocks),
   };
+}
+export function parsePageConfigBlocks(pageConfig: string): CampaignBlock[] {
+  if (!pageConfig.trim()) return [];
+
+  try {
+    const parsed: unknown = JSON.parse(pageConfig);
+    return Array.isArray(parsed) ? (parsed as CampaignBlock[]) : [];
+  } catch {
+    return [];
+  }
 }
 
 async function readResponse(

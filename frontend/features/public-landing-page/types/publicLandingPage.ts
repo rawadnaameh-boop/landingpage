@@ -6,11 +6,3 @@ export interface LandingPageDto {
   createdAt: string;
   updatedAt: string;
 }
-
-export interface LandingPageConfig {
-  headlineText?: string;
-  subheadlineText?: string;
-  mainImageUrl?: string;
-  primaryColor?: string;
-  buttonText?: string;
-}
