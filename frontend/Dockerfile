@@ -15,14 +15,18 @@ RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-maxtimeout 120000 && \
     npm config set maxsockets 1 && \
     npm install --legacy-peer-deps
-    
+
 # Step 2: Build the application
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build Next.js app (generates .next/standalone)
+# Set the environment variable for the Next.js static build process
+ARG NEXT_PUBLIC_API_BASE_URL=http://landing-page-alb-1818628334.eu-north-1.elb.amazonaws.com
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+
+# Build Next.js app (generates .next/standalone with the ALB URL baked in)
 RUN npm run build
 
 # Step 3: Production environment
