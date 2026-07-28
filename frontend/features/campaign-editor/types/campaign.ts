@@ -1,17 +1,14 @@
+import type { CampaignBlock } from "./blocks";
+
 export interface CampaignFormData {
-    campaignName: string;
-    slug: string;
-    headlineText: string;
-    subheadlineText: string;
-    mainImageUrl: string;
-    primaryColor: string;
-    buttonText: string;
-
+  campaignName: string;
+  slug: string;
+  blocks: CampaignBlock[];
 }
 
-export type SaveStatus = 
-| {
-    severity: "success" | "error";
-    message: string;
-}
-| null;
+export type SaveStatus =
+  | {
+      severity: "success" | "error";
+      message: string;
+    }
+  | null;

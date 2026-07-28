@@ -13,6 +13,7 @@ from sklearn.cluster import KMeans
 from transformers import pipeline
 from routes.copy_routes import router as copy_router
 from routes.urgency_routes import router as urgency_router
+from routes.page_layout_routes import router as page_layout_router
 logger = logging.getLogger(__name__)
 
 
@@ -28,6 +29,7 @@ app.add_middleware(
 )
 app.include_router(copy_router)
 app.include_router(urgency_router)
+app.include_router(page_layout_router)
 # Define the expected JSON input structure
 class ImageRequest(BaseModel):
     url: str

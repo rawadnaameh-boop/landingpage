@@ -1,6 +1,6 @@
+import type { CampaignBlock } from "@/features/campaign-editor/types/blocks";
 import type {
   CampaignListItem,
-  CampaignPageConfig,
   LandingPageDto,
 } from "../types/campaignDashboard";
 
@@ -8,37 +8,38 @@ const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_BASE_URL ??
   "http://localhost:5101"
 ).replace(/\/$/, "");
-function parsePageConfig(
+
+function parsePageConfigBlocks(
   pageConfig: string,
-): CampaignPageConfig {
+): CampaignBlock[] {
   if (!pageConfig.trim()) {
-    return {};
+    return [];
   }
 
   try {
     const parsedValue: unknown = JSON.parse(pageConfig);
-    if (
-      typeof parsedValue !== "object" ||
-      parsedValue === null ||
-      Array.isArray(parsedValue)
-    ) {
-      return {};
-    }
 
-    return parsedValue as CampaignPageConfig;
+    return Array.isArray(parsedValue)
+      ? (parsedValue as CampaignBlock[])
+      : [];
   } catch {
     console.warn(
       "A campaign contains invalid PageConfig JSON:",
       pageConfig,
     );
 
-    return {};
+    return [];
   }
 }
 function mapLandingPageToListItem(
   page: LandingPageDto,
 ): CampaignListItem {
-  const config = parsePageConfig(page.pageConfig);
+  const blocks = parsePageConfigBlocks(page.pageConfig);
+
+  const heroImageBlock = blocks.find(
+    (block): block is Extract<CampaignBlock, { type: "HeroImage" }> =>
+      block.type === "HeroImage",
+  );
 
   return {
     id: page.id,
@@ -49,7 +50,7 @@ function mapLandingPageToListItem(
     slug: page.slug,
 
     mainImageUrl:
-      config.mainImageUrl?.trim() ||
+      heroImageBlock?.imageUrl.trim() ||
       "/images/campaign-placeholder.svg",
 
     createdAt: page.createdAt,

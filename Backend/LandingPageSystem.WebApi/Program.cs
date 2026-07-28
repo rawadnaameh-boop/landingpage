@@ -72,13 +72,15 @@ if (!pythonServiceBaseUrl.EndsWith("/"))
     pythonServiceBaseUrl += "/";
 }
 
+var pythonServiceUri = new Uri(pythonServiceBaseUrl);
+
 // AI copy-generation client
 builder.Services.AddHttpClient<
     ICopyGenerationService,
     PythonCopyGenerationService
 >(client =>
 {
-    client.BaseAddress = new Uri(pythonServiceBaseUrl);
+    client.BaseAddress = pythonServiceUri;
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
@@ -88,8 +90,15 @@ builder.Services.AddHttpClient<
     UrgencyScoringService
 >(client =>
 {
-    client.BaseAddress = new Uri(pythonServiceBaseUrl);
+    client.BaseAddress = pythonServiceUri;
     client.Timeout = TimeSpan.FromMinutes(2);
+});
+
+// AI full-page generation client (Required for AiPageController)
+builder.Services.AddHttpClient("MlService", client =>
+{
+    client.BaseAddress = pythonServiceUri;
+    client.Timeout = TimeSpan.FromSeconds(60);
 });
 
 var app = builder.Build();

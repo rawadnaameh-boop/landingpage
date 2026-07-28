@@ -5,10 +5,9 @@ import {
   Typography,
 } from "@mui/material";
 
-import type {
-  LandingPageConfig,
-  LandingPageDto,
-} from "../types/publicLandingPage";
+import type { CampaignBlock } from "@/features/campaign-editor/types/blocks";
+
+import type { LandingPageDto } from "../types/publicLandingPage";
 
 interface PublicLandingPageProps {
   page: LandingPageDto;
@@ -16,60 +15,141 @@ interface PublicLandingPageProps {
 
 const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
-function parsePageConfig(
+function parsePageConfigBlocks(
   pageConfig: string,
-): LandingPageConfig {
+): CampaignBlock[] {
   if (!pageConfig.trim()) {
-    return {};
+    return [];
   }
 
   try {
     const parsedValue: unknown = JSON.parse(pageConfig);
 
-    if (
-      typeof parsedValue !== "object" ||
-      parsedValue === null ||
-      Array.isArray(parsedValue)
-    ) {
-      return {};
-    }
-
-    return parsedValue as LandingPageConfig;
+    return Array.isArray(parsedValue)
+      ? (parsedValue as CampaignBlock[])
+      : [];
   } catch {
     console.warn(
       "The landing page contains invalid PageConfig JSON.",
     );
 
-    return {};
+    return [];
+  }
+}
+
+function renderPublicBlock(block: CampaignBlock) {
+  switch (block.type) {
+    case "HeroImage":
+      return (
+        <Box
+          key={block.id}
+          component="img"
+          src={block.imageUrl.trim() || "/images/campaign-placeholder.svg"}
+          alt="Campaign hero"
+          sx={{
+            display: "block",
+            width: "100%",
+            height: {
+              xs: 280,
+              sm: 380,
+              md: 500,
+            },
+            objectFit: "cover",
+            bgcolor: "grey.100",
+          }}
+        />
+      );
+
+    case "Headline":
+      return (
+        <Container key={block.id} maxWidth="md" sx={{ pt: 6, textAlign: block.align }}>
+          <Typography
+            component="h1"
+            sx={{
+              fontSize: {
+                xs: "2.25rem",
+                sm: "3rem",
+                md: "4rem",
+              },
+              fontWeight: 800,
+              lineHeight: 1.1,
+              color: block.color,
+            }}
+          >
+            {block.text}
+          </Typography>
+        </Container>
+      );
+
+    case "Paragraph":
+      return (
+        <Container key={block.id} maxWidth="md" sx={{ pt: 3, textAlign: "center" }}>
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            sx={{
+              maxWidth: 680,
+              mx: "auto",
+              lineHeight: 1.7,
+              fontWeight: 400,
+            }}
+          >
+            {block.text}
+          </Typography>
+        </Container>
+      );
+
+    case "Button": {
+      const buttonColor = HEX_COLOR_PATTERN.test(block.color)
+        ? block.color
+        : "#1976d2";
+
+      return (
+        <Container key={block.id} maxWidth="md" sx={{ py: 3, textAlign: "center" }}>
+          <Button
+            variant="contained"
+            size="large"
+            sx={{
+              minWidth: 220,
+              px: 4,
+              py: 1.5,
+
+              bgcolor: buttonColor,
+              color: "#ffffff",
+
+              fontSize: "1rem",
+              fontWeight: 700,
+
+              "&:hover": {
+                bgcolor: buttonColor,
+                filter: "brightness(0.9)",
+              },
+            }}
+          >
+            {block.text}
+          </Button>
+        </Container>
+      );
+    }
+
+    case "CountdownTimer":
+      return (
+        <Container key={block.id} maxWidth="md" sx={{ py: 3, textAlign: "center" }}>
+          <Typography variant="caption" color="text.secondary">
+            Offer ends
+          </Typography>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+            {new Date(block.endDate).toLocaleString()}
+          </Typography>
+        </Container>
+      );
   }
 }
 
 export default function PublicLandingPage({
   page,
 }: PublicLandingPageProps) {
-  const config = parsePageConfig(page.pageConfig);
-
-  const headline =
-    config.headlineText?.trim() ||
-    page.campaignName;
-
-  const subheadline =
-    config.subheadlineText?.trim() ||
-    "Discover everything this campaign has to offer.";
-
-  const heroImage =
-    config.mainImageUrl?.trim() ||
-    "/images/campaign-placeholder.svg";
-
-  const buttonText =
-    config.buttonText?.trim() ||
-    "GET STARTED";
-
-  const buttonColor =
-    config.primaryColor &&
-    HEX_COLOR_PATTERN.test(config.primaryColor)
-      ? config.primaryColor
-      : "#1976d2";
+  const blocks = parsePageConfigBlocks(page.pageConfig);
 
   return (
     <Box
@@ -109,90 +189,21 @@ export default function PublicLandingPage({
         </Typography>
       </Box>
 
-      {/* Hero image */}
-      <Box
-        component="img"
-        src={heroImage}
-        alt={`${page.campaignName} hero image`}
-        sx={{
-          display: "block",
-          width: "100%",
-          height: {
-            xs: 280,
-            sm: 380,
-            md: 500,
-          },
-          objectFit: "cover",
-          bgcolor: "grey.100",
-        }}
-      />
-
-      {/* Main campaign content */}
-      <Container
-        maxWidth="md"
-        sx={{
-          py: {
-            xs: 6,
-            md: 10,
-          },
-          textAlign: "center",
-        }}
-      >
-        <Typography
-          component="h1"
-          sx={{
-            mb: 3,
-
-            fontSize: {
-              xs: "2.25rem",
-              sm: "3rem",
-              md: "4rem",
-            },
-
-            fontWeight: 800,
-            lineHeight: 1.1,
-          }}
-        >
-          {headline}
-        </Typography>
-
-        <Typography
-          variant="h6"
-          color="text.secondary"
-          sx={{
-            maxWidth: 680,
-            mx: "auto",
-            mb: 5,
-            lineHeight: 1.7,
-            fontWeight: 400,
-          }}
-        >
-          {subheadline}
-        </Typography>
-
-        <Button
-          variant="contained"
-          size="large"
-          sx={{
-            minWidth: 220,
-            px: 4,
-            py: 1.5,
-
-            bgcolor: buttonColor,
-            color: "#ffffff",
-
-            fontSize: "1rem",
-            fontWeight: 700,
-
-            "&:hover": {
-              bgcolor: buttonColor,
-              filter: "brightness(0.9)",
-            },
-          }}
-        >
-          {buttonText}
-        </Button>
-      </Container>
+      {/* Campaign content, rendered in the exact order it was arranged in the editor */}
+      <Box sx={{ pb: 6 }}>
+        {blocks.length === 0 ? (
+          <Container maxWidth="md" sx={{ py: 10, textAlign: "center" }}>
+            <Typography component="h1" sx={{ fontWeight: 800 }}>
+              {page.campaignName}
+            </Typography>
+            <Typography color="text.secondary" sx={{ mt: 2 }}>
+              Discover everything this campaign has to offer.
+            </Typography>
+          </Container>
+        ) : (
+          blocks.map(renderPublicBlock)
+        )}
+      </Box>
     </Box>
   );
 }
