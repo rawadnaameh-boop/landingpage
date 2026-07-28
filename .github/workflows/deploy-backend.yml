@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'backend/**' # Only triggers if files in the backend folder change
+      - 'Backend/**'
 
 jobs:
   deploy:
@@ -28,11 +28,11 @@ jobs:
     - name: Build, tag, and push image to Amazon ECR
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: landing-page-backend # <--- UPDATE THIS
+        ECR_REPOSITORY: landing-page-backend
         IMAGE_TAG: latest
       run: |
-        cd backend
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        cd Backend
+        docker build -f LandingPageSystem.WebApi/Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
     - name: Force ECS service update
