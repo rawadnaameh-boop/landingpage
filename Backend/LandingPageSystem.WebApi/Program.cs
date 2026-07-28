@@ -31,7 +31,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 3. Configure EF Core with MySQL
+// 3. Configure EF Core with MySQL RDS
 string connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
@@ -60,12 +60,19 @@ builder.Services.AddScoped<
     LandingPageService
 >();
 
-// 5. Read the Python service URL once
+// 5. Read the Python service URL with fallbacks & trailing slash formatting
 string pythonServiceBaseUrl =
-    builder.Configuration["PythonService:BaseUrl"]
-    ?? "http://localhost:8000/";
+    builder.Configuration["MLService:BaseUrl"]
+    ?? builder.Configuration["PythonService:BaseUrl"]
+    ?? builder.Configuration["MLServiceUrl"]
+    ?? "http://ml-color-service:8000/";
 
-// Existing AI copy-generation client
+if (!pythonServiceBaseUrl.EndsWith("/"))
+{
+    pythonServiceBaseUrl += "/";
+}
+
+// AI copy-generation client
 builder.Services.AddHttpClient<
     ICopyGenerationService,
     PythonCopyGenerationService
@@ -75,7 +82,7 @@ builder.Services.AddHttpClient<
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-// New urgency-scoring client
+// Urgency-scoring client
 builder.Services.AddHttpClient<
     IUrgencyScoringService,
     UrgencyScoringService
@@ -99,9 +106,10 @@ else
 }
 
 app.UseCors(FrontendCorsPolicy);
-
 app.UseAuthorization();
-
 app.MapControllers();
+
+// NOTE: Auto-migrations disabled because we manually imported and aligned 
+// the AWS RDS schema and tables.
 
 app.Run();
