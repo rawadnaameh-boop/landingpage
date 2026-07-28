@@ -52,3 +52,4 @@ EXPOSE 3000
 
 # Start the standalone server directly with Node
 CMD ["node", "server.js"]
+
