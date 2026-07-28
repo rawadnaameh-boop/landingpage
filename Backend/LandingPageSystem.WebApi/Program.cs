@@ -31,7 +31,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 3. Configure EF Core with MySQL
+// 3. Configure EF Core with MySQL RDS
 string connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
@@ -60,19 +60,21 @@ builder.Services.AddScoped<
     LandingPageService
 >();
 
-// 5. Read and normalize the Python service URL
+// 5. Read the Python service URL with fallbacks & trailing slash formatting
 string pythonServiceBaseUrl =
-    builder.Configuration["PythonService:BaseUrl"]
-    ?? "http://localhost:8000/";
+    builder.Configuration["MLService:BaseUrl"]
+    ?? builder.Configuration["PythonService:BaseUrl"]
+    ?? builder.Configuration["MLServiceUrl"]
+    ?? "http://ml-color-service:8000/";
 
-if (!pythonServiceBaseUrl.EndsWith('/'))
+if (!pythonServiceBaseUrl.EndsWith("/"))
 {
     pythonServiceBaseUrl += "/";
 }
 
 var pythonServiceUri = new Uri(pythonServiceBaseUrl);
 
-// Existing AI copy-generation client
+// AI copy-generation client
 builder.Services.AddHttpClient<
     ICopyGenerationService,
     PythonCopyGenerationService
@@ -82,7 +84,7 @@ builder.Services.AddHttpClient<
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
-// Existing urgency-scoring client
+// Urgency-scoring client
 builder.Services.AddHttpClient<
     IUrgencyScoringService,
     UrgencyScoringService
@@ -92,8 +94,7 @@ builder.Services.AddHttpClient<
     client.Timeout = TimeSpan.FromMinutes(2);
 });
 
-// AI full-page generation client
-// The name must match CreateClient("MlService") in AiPageController.
+// AI full-page generation client (Required for AiPageController)
 builder.Services.AddHttpClient("MlService", client =>
 {
     client.BaseAddress = pythonServiceUri;
@@ -114,9 +115,10 @@ else
 }
 
 app.UseCors(FrontendCorsPolicy);
-
 app.UseAuthorization();
-
 app.MapControllers();
+
+// NOTE: Auto-migrations disabled because we manually imported and aligned 
+// the AWS RDS schema and tables.
 
 app.Run();

@@ -9,6 +9,7 @@ using LandingPageSystem.Application.DTOs;
 using LandingPageSystem.Application.Interfaces;
 using LandingPageSystem.Domain.Entities;
 using LandingPageSystem.Domain.Repositories;
+using Microsoft.Extensions.Configuration; // Added for IConfiguration
 
 namespace LandingPageSystem.Application.Services;
 
@@ -16,14 +17,17 @@ public class LandingPageService : ILandingPageService
 {
     private readonly ILandingPageRepository _repository;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IConfiguration _configuration; // 1. Add IConfiguration field
 
-    // Inject both the repository and the HTTP client factory in the constructor
+    // Inject repository, HTTP client factory, and configuration
     public LandingPageService(
         ILandingPageRepository repository,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        IConfiguration configuration) // 2. Inject IConfiguration
     {
         _repository = repository;
         _httpClientFactory = httpClientFactory;
+        _configuration = configuration;
     }
 
     public async Task<LandingPageDto?> GetByIdAsync(Guid id)
@@ -34,7 +38,6 @@ public class LandingPageService : ILandingPageService
 
     public async Task<LandingPageDto?> GetBySlugAsync(string slug)
     {
-        // Enforce lowercase lookups for URLs
         var normalizedSlug = slug.Trim().ToLowerInvariant();
         var page = await _repository.GetBySlugAsync(normalizedSlug);
         return page == null ? null : MapToDto(page);
@@ -42,14 +45,12 @@ public class LandingPageService : ILandingPageService
 
     public async Task<LandingPageDto> CreateAsync(CreateLandingPageRequest request)
     {
-        // Enforce the unique slug business rule
         var sanitizedSlug = request.Slug.Trim().ToLowerInvariant().Replace(" ", "-");
         if (await _repository.SlugExistsAsync(sanitizedSlug))
         {
             throw new InvalidOperationException($"The URL slug '{sanitizedSlug}' is already in use.");
         }
 
-        // Create the rich entity (the constructor will sanitize the slug again internally)
         var landingPage = new LandingPage(request.CampaignName, request.Slug, request.PageConfig);
         await _repository.AddAsync(landingPage);
 
@@ -61,14 +62,12 @@ public class LandingPageService : ILandingPageService
         var page = await _repository.GetByIdAsync(id);
         if (page == null) return null;
 
-        // Ensure the updated slug doesn't conflict with *another* page's slug
         var sanitizedSlug = request.Slug.Trim().ToLowerInvariant().Replace(" ", "-");
         if (await _repository.SlugExistsAsync(sanitizedSlug, id))
         {
             throw new InvalidOperationException($"The URL slug '{sanitizedSlug}' is already in use.");
         }
 
-        // Update properties through the domain entity's rich method
         page.UpdateConfiguration(request.CampaignName, request.Slug, request.PageConfig);
         await _repository.UpdateAsync(page);
 
@@ -82,7 +81,7 @@ public class LandingPageService : ILandingPageService
     }
 
     /// <summary>
-    /// Calls the Python ML Microservice to extract the top 2 dominant colors from an image.
+    /// Calls the Python ML Microservice to extract dominant colors from an image.
     /// </summary>
     public async Task<ColorExtractionResponse?> ExtractColorsAsync(string imageUrl)
     {
@@ -99,8 +98,14 @@ public class LandingPageService : ILandingPageService
 
         try
         {
-            // Pointing to your Python FastAPI microservice
-            var response = await client.PostAsync("http://localhost:8000/extract-colors", content);
+            // 3. Resolve base URL dynamically from config (or default to Docker container service name)
+            var baseUrl = _configuration["MLService:BaseUrl"]
+                       ?? _configuration["MLServiceUrl"]
+                       ?? "http://ml-color-service:8000/";
+
+            var endpoint = $"{baseUrl.TrimEnd('/')}/extract-colors";
+
+            var response = await client.PostAsync(endpoint, content);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -109,7 +114,6 @@ public class LandingPageService : ILandingPageService
 
             var responseString = await response.Content.ReadAsStringAsync();
 
-            // Deserialize the Python response into the C# DTO
             return JsonSerializer.Deserialize<ColorExtractionResponse>(responseString, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
@@ -117,12 +121,10 @@ public class LandingPageService : ILandingPageService
         }
         catch (HttpRequestException)
         {
-            // If the Python server is offline, we fail gracefully instead of breaking the .NET pipeline
             return null;
         }
     }
 
-    // A helper method to map our rich domain model to a clean data contract (DTO)
     private static LandingPageDto MapToDto(LandingPage page)
     {
         return new LandingPageDto(

@@ -1,9 +1,6 @@
 import Link from "next/link";
-
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
-
 import LaunchRoundedIcon from "@mui/icons-material/LaunchRounded";
-
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import {
   Button,
@@ -24,7 +21,10 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
   const editUrl = `/admin/campaign-editor?slug=${encodeURIComponent(
     campaign.slug,
   )}`;
-  const liveUrl = `/pages/${encodeURIComponent(campaign.slug)}`;
+  
+  // Clean leading slash if present, then route to /pages/[slug]
+  const cleanSlug = campaign.slug.replace(/^\/+/, "");
+  const liveUrl = `/pages/${encodeURIComponent(cleanSlug)}`;
 
   return (
     <Card
@@ -89,7 +89,7 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
               overflowWrap: "anywhere",
             }}
           >
-            /{campaign.slug}
+            /pages/{cleanSlug}
           </Typography>
         </Stack>
       </CardContent>
@@ -121,7 +121,7 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
         </Button>
 
         <Button
-          component="a"
+          component={Link}
           href={liveUrl}
           target="_blank"
           rel="noopener noreferrer"
