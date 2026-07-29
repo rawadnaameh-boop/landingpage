@@ -1,8 +1,5 @@
 // ✅ Production-safe URL resolution
-const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  (process.env.NODE_ENV === "production" ? "" : "http://localhost:5000")
-).replace(/\/$/, "");
+const API_BASE_URL = "";
 
 export interface ExtractedColors {
   primary: string;

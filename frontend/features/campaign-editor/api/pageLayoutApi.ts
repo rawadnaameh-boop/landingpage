@@ -1,11 +1,6 @@
 import type { CampaignBlock } from "../types/blocks";
 
-// ✅ Production-safe URL resolution:
-// If NEXT_PUBLIC_ML_API_URL is missing/empty, default to "" in production so requests use relative paths.
-const ML_API_BASE_URL = (
-  process.env.NEXT_PUBLIC_ML_API_URL ||
-  (process.env.NODE_ENV === "production" ? "" : "http://127.0.0.1:8000")
-).replace(/\/$/, "");
+const API_BASE_URL = "";
 
 interface GeneratePageLayoutError {
   detail?: string;
@@ -74,7 +69,7 @@ export async function generatePageLayout(
   }
 
   const response = await fetch(
-    `${ML_API_BASE_URL}/generate-page-layout`,
+    `${API_BASE_URL}/api/ai/generate-page-layout`,
     {
       method: "POST",
       headers: {

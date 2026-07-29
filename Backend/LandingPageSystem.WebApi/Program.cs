@@ -4,6 +4,7 @@ using LandingPageSystem.Domain.Repositories;
 using LandingPageSystem.Infrastructure.Data;
 using LandingPageSystem.Infrastructure.Repositories;
 using LandingPageSystem.Infrastructure.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -111,10 +112,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-else
+
+// ALB terminates TLS and forwards HTTP internally; do not redirect to HTTPS here.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
-    app.UseHttpsRedirection();
-}
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    KnownNetworks = { },
+    KnownProxies = { }
+});
 
 app.UseCors(FrontendCorsPolicy);
 app.UseAuthorization();

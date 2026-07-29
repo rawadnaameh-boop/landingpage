@@ -4,10 +4,7 @@ import type {
   LandingPageDto,
 } from "../types/campaignDashboard";
 
-const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  (process.env.NODE_ENV === "production" ? "" : "http://localhost:5101")
-).replace(/\/$/, "");
+const API_BASE_URL = "";
 
 function parsePageConfigBlocks(
   pageConfig: string,
