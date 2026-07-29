@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'ml-color-service/**'
+      - '.github/workflows/deploy-ml.yml'
 
 jobs:
   deploy:

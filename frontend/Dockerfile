@@ -9,7 +9,7 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Configure npm for network resilience and STRICTLY throttle connections
+# Configure npm for network resilience and throttled connections
 RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
@@ -25,12 +25,12 @@ COPY . .
 # Remove any local .env files copied by 'COPY . .' so Next.js doesn't override the build ARG
 RUN rm -f .env*
 
-# Client API calls use the current origin in production. The load balancer must
-# forward /api/* to the backend target group.
-ARG NEXT_PUBLIC_API_BASE_URL=
+# Client API calls use the current origin in production.
+ARG NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV NODE_ENV=production
 
-# Build Next.js app (generates .next/standalone with the ALB URL baked in)
+# Build Next.js app (generates .next/standalone with the API URL baked in)
 RUN npm run build
 
 # Step 3: Production environment
@@ -56,4 +56,3 @@ EXPOSE 3000
 
 # Start the standalone server directly with Node
 CMD ["node", "server.js"]
-
