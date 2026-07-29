@@ -1,39 +1,43 @@
 import type { UrgencyScoreResponse } from "../types/urgency";
+
+// ✅ Safe fallback: Use env var, fallback to relative path ("") in production, or localhost in local dev
 const API_BASE_URL = (
-    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000"
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  (process.env.NODE_ENV === "production" ? "" : "http://localhost:5000")
 ).replace(/\/$/, "");
 
-interface ApiErrorResponse{
-    message?: string;
+interface ApiErrorResponse {
+  message?: string;
 }
+
 export async function scoreHeadlineUrgency(
-    headline: string,
-    signal?: AbortSignal,
-    ): Promise<UrgencyScoreResponse> {
-        const response = await fetch(`${API_BASE_URL}/api/ai/score-urgency`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    headline,
-                }),
-                signal,
-            },
-        );
-        if(!response.ok){
-            let errorMessage = "Unable to score the headline.";
+  headline: string,
+  signal?: AbortSignal,
+): Promise<UrgencyScoreResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/ai/score-urgency`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      headline,
+    }),
+    signal,
+  });
 
-            try {
-                const errorBody =(await response.json()) as ApiErrorResponse;
-                if (errorBody.message){
-                    errorMessage = errorBody.message;
-                }
-            }catch{ 
+  if (!response.ok) {
+    let errorMessage = "Unable to score the headline.";
 
-            }
-            throw new Error(errorMessage);
-        }
-        return (await response.json()) as UrgencyScoreResponse;
+    try {
+      const errorBody = (await response.json()) as ApiErrorResponse;
+      if (errorBody.message) {
+        errorMessage = errorBody.message;
+      }
+    } catch {
+      // Ignore JSON parse errors
     }
+    throw new Error(errorMessage);
+  }
+
+  return (await response.json()) as UrgencyScoreResponse;
+}

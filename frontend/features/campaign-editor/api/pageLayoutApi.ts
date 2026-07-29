@@ -1,7 +1,11 @@
 import type { CampaignBlock } from "../types/blocks";
 
-const ML_API_BASE_URL =
-  process.env.NEXT_PUBLIC_ML_API_URL ?? "http://127.0.0.1:8000";
+// ✅ Production-safe URL resolution:
+// If NEXT_PUBLIC_ML_API_URL is missing/empty, default to "" in production so requests use relative paths.
+const ML_API_BASE_URL = (
+  process.env.NEXT_PUBLIC_ML_API_URL ||
+  (process.env.NODE_ENV === "production" ? "" : "http://127.0.0.1:8000")
+).replace(/\/$/, "");
 
 interface GeneratePageLayoutError {
   detail?: string;

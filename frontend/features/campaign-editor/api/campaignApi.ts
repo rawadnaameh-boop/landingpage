@@ -1,8 +1,12 @@
 import type { CampaignFormData } from "../types/campaign";
-import type { CampaignBlock } from "../types/blocks"
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
-  "http://localhost:5000";
+import type { CampaignBlock } from "../types/blocks";
+
+// ✅ Production-safe URL resolution:
+// If NEXT_PUBLIC_API_BASE_URL is missing/empty, default to "" in production so requests use relative paths.
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  (process.env.NODE_ENV === "production" ? "" : "http://localhost:5000")
+).replace(/\/$/, "");
 
 export interface CampaignApiResponse {
   id: number;
@@ -24,6 +28,7 @@ function createPayload(campaign: CampaignFormData, slug: string): CampaignPayloa
     pageConfig: JSON.stringify(campaign.blocks),
   };
 }
+
 export function parsePageConfigBlocks(pageConfig: string): CampaignBlock[] {
   if (!pageConfig.trim()) return [];
 
