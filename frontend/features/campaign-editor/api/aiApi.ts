@@ -1,7 +1,9 @@
 import type { UrgencyScoreResponse } from "../types/urgency";
 
-// ✅ Safe fallback: Use env var, fallback to relative path ("") in production, or localhost in local dev
-const API_BASE_URL = "";
+// ✅ Reads NEXT_PUBLIC_API_BASE_URL from env.
+// In Docker production, NEXT_PUBLIC_API_BASE_URL="" -> stays "" (uses relative path /api/...)
+// In Local Dev, falls back to "http://localhost:5101"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5101";
 
 interface ApiErrorResponse {
   message?: string;

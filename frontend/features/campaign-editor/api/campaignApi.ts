@@ -1,9 +1,10 @@
 import type { CampaignFormData } from "../types/campaign";
 import type { CampaignBlock } from "../types/blocks";
 
-// ✅ Production-safe URL resolution:
-// If NEXT_PUBLIC_API_BASE_URL is missing/empty, default to "" in production so requests use relative paths.
-const API_BASE_URL = "";
+// ✅ Reads NEXT_PUBLIC_API_BASE_URL from env.
+// In Docker production, NEXT_PUBLIC_API_BASE_URL="" -> stays "" (uses relative path /api/...)
+// In Local Dev, falls back to "http://localhost:5101"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5101";
 
 export interface CampaignApiResponse {
   id: number;
