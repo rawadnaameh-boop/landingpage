@@ -24,7 +24,9 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins(
                 "http://localhost:3000",
-                "http://localhost:3001"
+                "http://localhost:3001",
+                "http://landing-page-alb-1818628334.eu-north-1.elb.amazonaws.com",
+                "https://landing-page-alb-1818628334.eu-north-1.elb.amazonaws.com"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
