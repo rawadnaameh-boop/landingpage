@@ -25,8 +25,9 @@ COPY . .
 # Remove any local .env files copied by 'COPY . .' so Next.js doesn't override the build ARG
 RUN rm -f .env*
 
-# Set the environment variable for the Next.js static build process
-ARG NEXT_PUBLIC_API_BASE_URL=http://landing-page-alb-1818628334.eu-north-1.elb.amazonaws.com
+# Client API calls use the current origin in production. The load balancer must
+# forward /api/* to the backend target group.
+ARG NEXT_PUBLIC_API_BASE_URL=
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 
 # Build Next.js app (generates .next/standalone with the ALB URL baked in)
