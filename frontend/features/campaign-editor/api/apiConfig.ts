@@ -1,2 +1,2 @@
 // ✅ FIX: Nullish coalescing preserves "" (empty string)
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:5101';
+export const API_BASE_URL = "";
