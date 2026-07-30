@@ -21,7 +21,6 @@ public class AiController : ControllerBase
     }
 
     [HttpPost("score-urgency")]
-    [HttpPost("generate-page-layout")]
     public async Task<ActionResult<UrgencyScoreResponse>> ScoreUrgency(
         [FromBody] UrgencyScoreRequest request,
         CancellationToken cancellationToken

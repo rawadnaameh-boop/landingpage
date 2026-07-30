@@ -20,7 +20,7 @@ public class UrgencyScoringService : IUrgencyScoringService
     {
         using HttpResponseMessage response =
             await _httpClient.PostAsJsonAsync(
-                "/score-urgency",
+                "/api/score-urgency",
                 request,
                 cancellationToken
             );
