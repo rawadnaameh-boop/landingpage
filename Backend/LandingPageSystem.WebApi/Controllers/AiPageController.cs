@@ -36,8 +36,9 @@ public class AiPageController : ControllerBase
         {
             var client = _httpClientFactory.CreateClient("MlService");
 
+            // UPDATED: Prefixed with "api/" so ALB matches the /api/* routing rule
             var pythonResponse = await client.PostAsJsonAsync(
-                "generate-page-layout",
+                "api/generate-page-layout", 
                 new
                 {
                     prompt = request.Prompt.Trim()
