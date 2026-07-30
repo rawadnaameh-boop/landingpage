@@ -20,6 +20,7 @@ public class AiController : ControllerBase
         _logger = logger;
     }
 
+    [HttpPost("score-urgency")]
     [HttpPost("generate-page-layout")]
     public async Task<ActionResult<UrgencyScoreResponse>> ScoreUrgency(
         [FromBody] UrgencyScoreRequest request,
