@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace LandingPageSystem.WebApi.Controllers;
 
 [ApiController]
-[Route("api/ai")]
+[Route("api/ai/page")]
 public class AiPageController : ControllerBase
 {
     private readonly IHttpClientFactory _httpClientFactory;

@@ -67,8 +67,9 @@ export async function generatePageLayout(
     throw new Error("Enter a page description before generating.");
   }
 
+  // UPDATED: Changed path from /api/ai/generate-page-layout to /api/ai/page/generate-page-layout
   const response = await fetch(
-    `${API_BASE_URL}/api/ai/generate-page-layout`,
+    `${API_BASE_URL}/api/ai/page/generate-page-layout`,
     {
       method: "POST",
       headers: {
